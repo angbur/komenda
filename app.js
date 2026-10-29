@@ -14,10 +14,27 @@
     const h = location.hash.replace('#', '');
     const v = VIEWS.includes(h) ? h : 'przeglad';
     VIEWS.forEach(id => { document.getElementById('v-' + id).hidden = id !== v; });
-    document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + v));
+    document.querySelectorAll('.nav a').forEach(a => {
+      const on = a.getAttribute('href') === '#' + v;
+      a.classList.toggle('active', on);
+      if (on) { a.setAttribute('aria-current', 'page'); document.getElementById('menuCur').textContent = a.textContent; } else a.removeAttribute('aria-current');
+    });
     document.getElementById('fab').hidden = v !== 'przeglad';
+    setMenu(false);
     window.scrollTo({ top: 0 });
   }
+
+  const topBar = document.querySelector('.top'), menuBtn = document.getElementById('menuBtn');
+  function setMenu(open) {
+    topBar.classList.toggle('open', open);
+    menuBtn.setAttribute('aria-expanded', String(open));
+  }
+  menuBtn.onclick = e => { e.stopPropagation(); setMenu(!topBar.classList.contains('open')); };
+  document.getElementById('nav').addEventListener('click', e => { if (e.target.closest('a')) setMenu(false); });
+  document.addEventListener('click', e => { if (topBar.classList.contains('open') && !topBar.contains(e.target)) setMenu(false); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && topBar.classList.contains('open')) { setMenu(false); menuBtn.focus(); } });
+  matchMedia('(min-width: 1061px)').addEventListener('change', e => { if (e.matches) setMenu(false); });
+
   window.addEventListener('hashchange', route);
   route();
 
@@ -244,26 +261,65 @@
     V.busy = false; renderVotes();
   }
 
+  const podium = document.getElementById('podium'), board = document.getElementById('board'), boardMore = document.getElementById('boardMore'), votePips = document.getElementById('votePips');
+  const BOARD_N = 7; let boardAll = false;
+  const plGlos = n => n === 1 ? 'głos' : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14)) ? 'głosy' : 'głosów';
+  const pct = (n, t) => t ? Math.round(n / t * 100) + '%' : '0%';
+
   function renderVotes() {
-    const total = Object.values(V.counts).reduce((a, b) => a + b, 0);
-    const max = Math.max(1, ...Object.values(V.counts));
+    const total = Object.values(V.counts).reduce((a, b) => a + Math.max(0, b), 0);
+    const mine = new Set(V.mine);
+    const dis = V.busy ? ' disabled' : '';
+    const ranked = Object.entries(V.counts).map(([k, n]) => ({ id: +k, r: byId.get(+k), n })).filter(x => x.n > 0 && x.r)
+      .sort((a, b) => b.n - a.n || b.r[1].localeCompare(a.r[1]) || b.id - a.id);
+    ranked.forEach((x, i) => { x.place = i && x.n === ranked[i - 1].n ? ranked[i - 1].place : i + 1; });
+    const placeOf = new Map(ranked.map(x => [x.id, x.place]));
+    const lead = ranked.length ? ranked[0].n : 1;
+    const mineTag = id => mine.has(id) ? '<span class="mine-tag">twój głos</span>' : '';
+    const meta = r => `#${r[0]} · ${fmt(r[1])} · ${esc(r[2])}`;
+
+    votePips.innerHTML = Array.from({ length: V.max }, (_, i) => `<i class="${i < V.mine.length ? 'on' : ''}"></i>`).join('');
+    voteStatus.textContent = `${V.mine.length} z ${V.max} głosów · łącznie oddano ${total}`;
+
+    const PLACE_NAME = ['', 'Złoto', 'Srebro', 'Brąz'];
+    podium.innerHTML = [0, 1, 2].map(i => {
+      const x = ranked[i];
+      if (!x) return `<div class="pod p${i + 1} empty"><span class="medal">${i + 1}</span><span>${i === 0 ? 'Jeszcze nikt nie głosował. Pierwszy głos ustawia lidera.' : 'Miejsce czeka na kandydata'}</span></div>`;
+      return `<button class="pod p${i + 1}${mine.has(x.id) ? ' mine' : ''}" type="button" data-id="${x.id}"${dis} aria-pressed="${mine.has(x.id)}" aria-label="${x.place}. miejsce, ${x.n} ${plGlos(x.n)}: ${esc(x.r[4])}">
+        <span class="pod-head"><span class="medal">${x.place}</span><span class="pod-place">${PLACE_NAME[i + 1]}</span></span>
+        <span class="tx"><span class="t">${esc(x.r[4])}${mineTag(x.id)}</span><span class="meta">${meta(x.r)}</span></span>
+        <span class="ft"><span class="pod-score"><b>${x.n}</b><span>${plGlos(x.n)} · ${pct(x.n, total)}</span></span><span class="meter"><i style="width:${x.n / lead * 100}%"></i></span></span>
+      </button>`;
+    }).join('');
+
+    const rest = ranked.slice(3), shownRest = boardAll ? rest : rest.slice(0, BOARD_N);
+    board.innerHTML = shownRest.map(x => `<li><button class="row${mine.has(x.id) ? ' mine' : ''}" type="button" data-id="${x.id}"${dis} aria-pressed="${mine.has(x.id)}">
+      <span class="bg" style="width:${x.n / lead * 100}%"></span>
+      <span class="pl">${x.place}.</span>
+      <span class="body"><span class="t">${esc(x.r[4])}${mineTag(x.id)}</span><span class="meta">${meta(x.r)}</span></span>
+      <span class="sc"><b>${x.n}</b><span>${pct(x.n, total)}</span></span>
+    </button></li>`).join('');
+    boardMore.hidden = rest.length <= BOARD_N;
+    boardMore.textContent = boardAll ? 'Zwiń ranking' : `Pokaż cały ranking (${ranked.length} tytułów)`;
+
     const s = voteQ.value.trim().toLowerCase();
-    const pool = (s ? DATA.filter(r => r[4].toLowerCase().includes(s) || String(r[0]).includes(s)) : DATA).map(r => r[0]);
-    const rank = new Map(Object.entries(V.counts).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]).map(([k], i) => [Number(k), i + 1]));
-    const rows = pool.map(id => ({ id, r: byId.get(id), n: V.counts[id] || 0 })).sort((a, b) => b.n - a.n || b.r[1].localeCompare(a.r[1]) || b.id - a.id);
-    voteStatus.textContent = `Twoje głosy: ${V.mine.length} / ${V.max} · oddanych łącznie: ${total}`;
-    voteHint.textContent = s ? `${rows.length} z ${DATA.length} tytułów` : `wszystkie ${DATA.length} tytuły, od okresu rymowanego do najstarszych`;
+    const rows = (s ? DATA.filter(r => r[4].toLowerCase().includes(s) || String(r[0]).includes(s)) : DATA).slice()
+      .sort((a, b) => b[1].localeCompare(a[1]) || b[0] - a[0]);
+    voteHint.textContent = s ? `${rows.length} z ${DATA.length}` : `${DATA.length} tytuły`;
     const EP_NAME = { 3: 'III. Okres rymowany', 2: 'II. Okres absencyjny i listowy', 1: 'I. Wczesny Komenda' };
     let lastGroup = null;
-    const groupOf = x => x.n > 0 ? 'Ranking' : EP_NAME[epochOf(x.r[1])];
-    voteList.innerHTML = rows.map((x, i) => { const g = groupOf(x); const head = g !== lastGroup ? `<li class="vote-group">${g}</li>` : ''; lastGroup = g; return head + `<li><button class="vote${V.mine.includes(x.id) ? ' mine' : ''}" type="button" data-id="${x.id}"${V.busy ? ' disabled' : ''} aria-pressed="${V.mine.includes(x.id)}">
-      <span class="rank">${x.n > 0 ? rank.get(x.id) + '.' : '–'}</span>
-      <span class="body"><span class="t">${esc(x.r[4])}${V.mine.includes(x.id) ? '<span class="check">twój głos</span>' : ''}</span><span class="meta">#${x.id} · ${fmt(x.r[1])} · ${esc(x.r[2])}</span></span>
-      <span class="n">${x.n}</span>
-      <span class="fill" style="width:${(x.n / max) * 100}%"></span>
-    </button></li>`; }).join('');
-    voteList.querySelectorAll('.vote').forEach(b => b.onclick = () => toggleVote(+b.dataset.id));
+    voteList.innerHTML = rows.length ? rows.map(r => {
+      const id = r[0], n = V.counts[id] || 0, g = EP_NAME[epochOf(r[1])];
+      const head = g !== lastGroup ? `<li class="vote-group">${g}</li>` : ''; lastGroup = g;
+      const chip = mine.has(id) ? `✓ ${n}` : n > 0 ? `${placeOf.get(id)}. miejsce · ${n}` : '+ głos';
+      return head + `<li><button class="vote${mine.has(id) ? ' mine' : ''}" type="button" data-id="${id}"${dis} aria-pressed="${mine.has(id)}">
+        <span class="body"><span class="t">${esc(r[4])}</span><span class="meta">${meta(r)}</span></span>
+        <span class="chip${n > 0 ? ' has' : ''}">${chip}</span>
+      </button></li>`;
+    }).join('') : '<li class="vote-group">Nic nie pasuje do wyszukiwania</li>';
   }
+  document.getElementById('v-glosowanie').addEventListener('click', e => { const b = e.target.closest('button[data-id]'); if (b && !b.disabled) toggleVote(+b.dataset.id); });
+  boardMore.onclick = () => { boardAll = !boardAll; renderVotes(); };
   document.getElementById('voteRefresh').onclick = loadVotes;
   voteQ.addEventListener('input', renderVotes);
   loadVotes();
