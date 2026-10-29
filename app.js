@@ -146,7 +146,7 @@
   ];
 
   const QUESTIONS = [
-    ['Ile bugów założył Dominik w projekcie U4TETA od stycznia 2025?', '432', ['187', '611', '1024'], 'Dokładnie 432, z czego 273 w 2026 roku i 159 w 2025.'],
+    ['Ile bugów założył Dominik od stycznia 2025?', '432', ['187', '611', '1024'], 'Dokładnie 432, z czego 273 w 2026 roku i 159 w 2025.'],
     ['W którym obszarze założył najwięcej bugów?', 'Reports', ['Payroll', 'Civil contract', 'RCP'], 'Reports: 274 bugi. Dalej Payroll i Civil contract po 50, RCP 32, Framework 17.'],
     ['Który miesiąc był rekordowy?', 'sierpień 2026', ['lipiec 2026', 'maj 2026', 'styczeń 2026'], 'Sierpień 2026: 45 bugów, głównie dyżury i harmonogramy. Lipiec 2026 miał 38, maj 29.'],
     ['Którego dnia założył najwięcej bugów?', '5 października 2026', ['1 września 2026', '13 sierpnia 2026', '5 maja 2025'], '13 bugów jednego dnia, niemal wszystkie o BHP: badania, szkolenia, środki, zapotrzebowanie i „Karoteka wydań”.'],
