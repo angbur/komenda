@@ -192,7 +192,7 @@
   renderCat();
 
   const NOMINEES = FEATURED.concat([1054215, 1054549, 1064613, 1080415, 1081932, 1094925, 1106177, 1114987, 1126684, 1148054, 1148541, 1151263]);
-  const voteList = document.getElementById('voteList'), voteStatus = document.getElementById('voteStatus'), voteNotice = document.getElementById('voteNotice');
+  const voteList = document.getElementById('voteList'), voteStatus = document.getElementById('voteStatus'), voteNotice = document.getElementById('voteNotice'), voteQ = document.getElementById('voteQ'), voteHint = document.getElementById('voteHint');
   let voter = null;
   try { voter = localStorage.getItem('voter'); if (!voter) { voter = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36)); localStorage.setItem('voter', voter); } } catch (e) { voter = 'anon-' + Math.random().toString(36).slice(2, 12); }
   let V = { configured: null, counts: {}, mine: [], max: 3, busy: false };
@@ -246,16 +246,24 @@
   function renderVotes() {
     const total = Object.values(V.counts).reduce((a, b) => a + b, 0);
     const max = Math.max(1, ...Object.values(V.counts));
-    const rows = NOMINEES.map(id => ({ id, r: byId.get(id), n: V.counts[id] || 0 })).sort((a, b) => b.n - a.n || a.r[1].localeCompare(b.r[1]));
+    const s = voteQ.value.trim().toLowerCase();
+    const pool = (s ? DATA.filter(r => r[4].toLowerCase().includes(s) || String(r[0]).includes(s)) : DATA).map(r => r[0]);
+    const rank = new Map(Object.entries(V.counts).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]).map(([k], i) => [Number(k), i + 1]));
+    const rows = pool.map(id => ({ id, r: byId.get(id), n: V.counts[id] || 0 })).sort((a, b) => b.n - a.n || b.r[1].localeCompare(a.r[1]) || b.id - a.id);
     voteStatus.textContent = `Twoje głosy: ${V.mine.length} / ${V.max} · oddanych łącznie: ${total}`;
-    voteList.innerHTML = rows.map((x, i) => `<li><button class="vote${V.mine.includes(x.id) ? ' mine' : ''}" type="button" data-id="${x.id}"${V.busy ? ' disabled' : ''} aria-pressed="${V.mine.includes(x.id)}">
-      <span class="rank">${x.n > 0 ? i + 1 + '.' : '–'}</span>
+    voteHint.textContent = s ? `${rows.length} z ${DATA.length} tytułów` : `wszystkie ${DATA.length} tytuły, od okresu rymowanego do najstarszych`;
+    const EP_NAME = { 3: 'III. Okres rymowany', 2: 'II. Okres absencyjny i listowy', 1: 'I. Wczesny Komenda' };
+    let lastGroup = null;
+    const groupOf = x => x.n > 0 ? 'Ranking' : EP_NAME[epochOf(x.r[1])];
+    voteList.innerHTML = rows.map((x, i) => { const g = groupOf(x); const head = g !== lastGroup ? `<li class="vote-group">${g}</li>` : ''; lastGroup = g; return head + `<li><button class="vote${V.mine.includes(x.id) ? ' mine' : ''}" type="button" data-id="${x.id}"${V.busy ? ' disabled' : ''} aria-pressed="${V.mine.includes(x.id)}">
+      <span class="rank">${x.n > 0 ? rank.get(x.id) + '.' : '–'}</span>
       <span class="body"><span class="t">${esc(x.r[4])}${V.mine.includes(x.id) ? '<span class="check">twój głos</span>' : ''}</span><span class="meta">#${x.id} · ${fmt(x.r[1])} · ${esc(x.r[2])}</span></span>
       <span class="n">${x.n}</span>
       <span class="fill" style="width:${(x.n / max) * 100}%"></span>
-    </button></li>`).join('');
+    </button></li>`; }).join('');
     voteList.querySelectorAll('.vote').forEach(b => b.onclick = () => toggleVote(+b.dataset.id));
   }
   document.getElementById('voteRefresh').onclick = loadVotes;
+  voteQ.addEventListener('input', renderVotes);
   loadVotes();
 })();
