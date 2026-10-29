@@ -9,7 +9,7 @@
   const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const link = id => `<a href="${ADO}${id}" target="_blank" rel="noopener">#${id}</a>`;
 
-  const VIEWS = ['przeglad', 'epoki', 'poemat', 'slowniczek', 'gra', 'quiz', 'katalog'];
+  const VIEWS = ['przeglad', 'epoki', 'poemat', 'slowniczek', 'gra', 'quiz', 'glosowanie', 'katalog'];
   function route() {
     const h = location.hash.replace('#', '');
     const v = VIEWS.includes(h) ? h : 'przeglad';
@@ -190,4 +190,72 @@
   [q, fEp, fArea, fRym].forEach(x => x.addEventListener('input', () => { shown = PAGE; renderCat(); }));
   moreBtn.onclick = () => { shown += PAGE; renderCat(); };
   renderCat();
+
+  const NOMINEES = FEATURED.concat([1054215, 1054549, 1064613, 1080415, 1081932, 1094925, 1106177, 1114987, 1126684, 1148054, 1148541, 1151263]);
+  const voteList = document.getElementById('voteList'), voteStatus = document.getElementById('voteStatus'), voteNotice = document.getElementById('voteNotice');
+  let voter = null;
+  try { voter = localStorage.getItem('voter'); if (!voter) { voter = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36)); localStorage.setItem('voter', voter); } } catch (e) { voter = 'anon-' + Math.random().toString(36).slice(2, 12); }
+  let V = { configured: null, counts: {}, mine: [], max: 3, busy: false };
+
+  function localRead() {
+    try { const s = JSON.parse(localStorage.getItem('votes-local') || '{}'); return { counts: s.counts || {}, mine: s.mine || [] }; } catch (e) { return { counts: {}, mine: [] }; }
+  }
+  function localWrite() { try { localStorage.setItem('votes-local', JSON.stringify({ counts: V.counts, mine: V.mine })); } catch (e) {} }
+
+  async function api(method, body) {
+    const r = await fetch('/api/votes' + (method === 'GET' ? '?voter=' + encodeURIComponent(voter) : ''), { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+    const j = await r.json();
+    if (r.status === 409) { showNotice(`Masz już ${V.max} głosy. Cofnij jeden, żeby zagłosować na inny tytuł.`); return null; }
+    if (!r.ok) throw new Error(j.error || r.status);
+    return j;
+  }
+  function showNotice(t) { voteNotice.textContent = t; voteNotice.hidden = !t; }
+
+  async function loadVotes() {
+    try {
+      const j = await api('GET');
+      if (j.configured) { V = { ...V, configured: true, counts: j.counts, mine: j.mine, max: j.max }; showNotice(''); }
+      else { V = { ...V, configured: false, ...localRead() }; showNotice('Tryb lokalny: głosy zapisują się tylko w tej przeglądarce. Po podłączeniu Upstash Redis na Vercelu ranking będzie wspólny.'); }
+    } catch (e) {
+      V = { ...V, configured: false, ...localRead() };
+      showNotice('Tryb lokalny: brak połączenia z serwerem głosów, zapisuję w tej przeglądarce.');
+    }
+    renderVotes();
+  }
+
+  async function toggleVote(id) {
+    if (V.busy) return;
+    const has = V.mine.includes(id);
+    if (!has && V.mine.length >= V.max) { showNotice(`Masz już ${V.max} głosy. Cofnij jeden, żeby zagłosować na inny tytuł.`); return; }
+    V.busy = true; renderVotes();
+    try {
+      if (V.configured) {
+        const j = await api('POST', { id, voter });
+        if (j) { V.counts = j.counts; V.mine = j.mine; showNotice(''); }
+      } else {
+        V.counts[id] = Math.max(0, (V.counts[id] || 0) + (has ? -1 : 1));
+        V.mine = has ? V.mine.filter(x => x !== id) : V.mine.concat(id);
+        localWrite();
+      }
+    } catch (e) {
+      showNotice('Nie udało się zapisać głosu. Spróbuj ponownie.');
+    }
+    V.busy = false; renderVotes();
+  }
+
+  function renderVotes() {
+    const total = Object.values(V.counts).reduce((a, b) => a + b, 0);
+    const max = Math.max(1, ...Object.values(V.counts));
+    const rows = NOMINEES.map(id => ({ id, r: byId.get(id), n: V.counts[id] || 0 })).sort((a, b) => b.n - a.n || a.r[1].localeCompare(b.r[1]));
+    voteStatus.textContent = `Twoje głosy: ${V.mine.length} / ${V.max} · oddanych łącznie: ${total}`;
+    voteList.innerHTML = rows.map((x, i) => `<li><button class="vote${V.mine.includes(x.id) ? ' mine' : ''}" type="button" data-id="${x.id}"${V.busy ? ' disabled' : ''} aria-pressed="${V.mine.includes(x.id)}">
+      <span class="rank">${x.n > 0 ? i + 1 + '.' : '–'}</span>
+      <span class="body"><span class="t">${esc(x.r[4])}${V.mine.includes(x.id) ? '<span class="check">twój głos</span>' : ''}</span><span class="meta">#${x.id} · ${fmt(x.r[1])} · ${esc(x.r[2])}</span></span>
+      <span class="n">${x.n}</span>
+      <span class="fill" style="width:${(x.n / max) * 100}%"></span>
+    </button></li>`).join('');
+    voteList.querySelectorAll('.vote').forEach(b => b.onclick = () => toggleVote(+b.dataset.id));
+  }
+  document.getElementById('voteRefresh').onclick = loadVotes;
+  loadVotes();
 })();
