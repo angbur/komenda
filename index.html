@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dzieła zebrane Dominika Komendy</title>
+<meta name="description" content="Antologia 432 tytułów bugów Dominika Komendy z Azure DevOps: epoki, poemat, słowniczek, gra i quiz.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <a class="brand" href="#przeglad">
+      <span class="brand-name">Dominik Komenda</span>
+      <span class="brand-title">Dzieła zebrane</span>
+    </a>
+    <nav class="nav" aria-label="Sekcje">
+      <a href="#przeglad">Przegląd</a>
+      <a href="#epoki">Epoki</a>
+      <a href="#poemat">Poemat</a>
+      <a href="#slowniczek">Słowniczek</a>
+      <a href="#gra">Dokończ tytuł</a>
+      <a href="#quiz">Quiz</a>
+      <a href="#katalog">Katalog</a>
+    </nav>
+    <button class="theme" id="themeBtn" type="button" aria-label="Przełącz motyw">◐</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section class="view" id="v-przeglad">
+  <div class="hero">
+    <div class="hero-text">
+      <p class="eyebrow">U4TETA · Work Items · typ: Bug · CreatedBy: Komenda</p>
+      <h1>Dzieła zebrane</h1>
+      <p class="lead">Nikt w zespole nie pisał tytułów bugów tak jak Dominik. Przez pierwszy rok były to porządne, rzeczowe nagłówki, czasem z lekkim zgrzytem („Obłe filtry nie są kwadratowe”). Na przełomie lutego i marca 2026, w trakcie testów harmonogramów i nowego grida, coś pękło i tytuły zaczęły się rymować. Od tej pory każdy przegląd backlogu był odrobinę lepszym dniem.</p>
+      <p>Ten zbiór zawiera wszystkie 432 tytuły, jakie Dominik założył w Azure DevOps w projekcie U4TETA od stycznia 2025 do października 2026. Tytuły przytaczamy bez poprawek, łącznie z literówkami, bo literówka też bywa częścią dzieła („scorll”, „Girdzie”, „chechbox”).</p>
+      <div class="hero-links">
+        <a class="btn" href="#epoki">Czytaj antologię</a>
+        <a class="btn ghost" href="#quiz">Zrób quiz</a>
+      </div>
+    </div>
+    <div class="hero-side">
+      <div class="stats">
+        <div><b>432</b><span>tytuły w katalogu</span></div>
+        <div><b id="stRym">0</b><span>pisanych rymem</span></div>
+        <div><b>21</b><span>miesięcy twórczości</span></div>
+        <div><b>359</b><span>doprowadzonych do Done</span></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-head"><span>Bugi na miesiąc</span><span class="muted" id="chartHint">najedź na słupek</span></div>
+        <div class="chart" id="chart"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="featured">
+    <div class="featured-head"><span class="eyebrow">Tytuł na dziś</span><button class="btn small ghost" id="shuffleBtn" type="button">Losuj inny</button></div>
+    <blockquote class="featured-title" id="featured"></blockquote>
+    <div class="featured-meta mono" id="featuredMeta"></div>
+  </div>
+</section>
+
+<section class="view" id="v-epoki" hidden>
+  <div class="section-head">
+    <h2>Trzy epoki</h2>
+    <p>Wybór w każdej kolumnie jest redakcyjny. Pełna lista jest w katalogu.</p>
+  </div>
+  <div class="epochs">
+    <article class="epoch">
+      <header>
+        <span class="epoch-num">I</span>
+        <h3>Wczesny Komenda</h3>
+        <p class="mono muted">styczeń – wrzesień 2025 · <span id="c1"></span></p>
+        <p>Okres surowy i oszczędny. Tytuł ma trzy słowa albo kod błędu i nic więcej. Z czasem pojawia się charakterystyczny chwyt: opis usterki, który sam jest trochę usterką.</p>
+      </header>
+      <ol class="anth" data-ids="951248,952465,957763,962540,973494,976884,990475,993204,998818,1001405,1003490,1004878,1006123,1007021"></ol>
+    </article>
+    <article class="epoch">
+      <header>
+        <span class="epoch-num">II</span>
+        <h3>Okres absencyjny i listowy</h3>
+        <p class="mono muted">październik 2025 – luty 2026 · <span id="c2"></span></p>
+        <p>Tytuły wydłużają się i nabierają temperamentu. Komponenty zaczynają mieć wolę, charakter i życie wewnętrzne. 4 lutego 2026 pada pierwszy rym w historii projektu.</p>
+      </header>
+      <ol class="anth" data-ids="1023226,1023227,1024745,1026706,1047816,1047817,1054215,1054549,1054818,1055311,1055471,1059010,1060231,1062887,1064613"></ol>
+    </article>
+    <article class="epoch">
+      <header>
+        <span class="epoch-num">III</span>
+        <h3>Okres rymowany</h3>
+        <p class="mono muted">luty 2026 – październik 2026 · <span id="c3"></span></p>
+        <p>Szczyt formy. 26 lutego 2026 pojawiają się „Dane ruchome” i „Spinner skradziony”, i od tego dnia szyk przestawny, rym parzysty i gwara stają się normą. Rozdział zamyka tytuł z 28 października 2026, który brzmi jak puenta całego tomu.</p>
+      </header>
+      <ol class="anth" data-ids="1068793,1068806,1079394,1080415,1081179,1081252,1081496,1081932,1084359,1086685,1092873,1094925,1097639,1098781,1106177,1109917,1114589,1115758,1116362,1117953,1120985,1126684,1126954,1133572,1134057,1137805,1140369,1142494,1144000,1148054,1148377,1154737"></ol>
+    </article>
+  </div>
+</section>
+
+<section class="view" id="v-poemat" hidden>
+  <div class="section-head">
+    <h2>Poemat zebrany</h2>
+    <p>Cento, czyli wiersz ułożony wyłącznie z cudzych wersów. Każda linijka to kompletny, prawdziwy tytuł buga. Numer obok prowadzi do work itemu.</p>
+  </div>
+  <div class="poem" id="poem"></div>
+  <p class="sig">Wszystkie wersy: Dominik Komenda, 2026. Układ: redakcja.</p>
+</section>
+
+<section class="view" id="v-slowniczek" hidden>
+  <div class="section-head">
+    <h2>Słowniczek komendyzmów</h2>
+    <p>Pojęcia, które weszły do języka zespołu i raczej już z niego nie wyjdą.</p>
+  </div>
+  <div class="gloss">
+    <div class="term"><dt>guzior, guziorki</dt><dd>przycisk, zwłaszcza taki, który zniknął albo poczuł miętę do czegoś innego</dd><span class="mono muted">#1115758 · #1120985</span></div>
+    <div class="term"><dt>oczko z ciapkiem</dt><dd>ikona widoku z kropką sygnalizującą zmiany; bywa wyświetlana bez zmiany w widoku</dd><span class="mono muted">#1098781 · #1134410</span></div>
+    <div class="term"><dt>disco checkboxy</dt><dd>checkboxy, które „ciągle się odznaczając, zaznaczają”; przypadłość gridów selekcji</dd><span class="mono muted">#1142494</span></div>
+    <div class="term"><dt>monoklik</dt><dd>pojedyncze kliknięcie; przeciwieństwo dwukliku, na który „trza przemienić”</dd><span class="mono muted">#1114589</span></div>
+    <div class="term"><dt>przyspawany</dt><dd>o wartości lub filtrze, których nie da się zmienić ani odkliknąć</dd><span class="mono muted">#1003490 · #1090786</span></div>
+    <div class="term"><dt>nie kuma</dt><dd>o komponencie, który nie rozumie koncepcji (przyklejonej kolumny, zakresu Do)</dd><span class="mono muted">#1097639 · #1148377</span></div>
+    <div class="term"><dt>zaprawki</dt><dd>drobne poprawki wizualne, zgłaszane hurtem</dd><span class="mono muted">#1076774</span></div>
+    <div class="term"><dt>bug zbiorczy</dt><dd>jeden bug, w którym mieszka kilkanaście mniejszych; gatunek literacki sam w sobie</dd><span class="mono muted">#1089089 · #1134408 · #1134412</span></div>
+    <div class="term"><dt>za mało polski</dt><dd>o liczniku czasu w repozytorium wydruków i ogólnie o wszystkim, co po angielsku</dd><span class="mono muted">#1092873</span></div>
+    <div class="term"><dt>bug placeholder</dt><dd>bug, który jeszcze nie wie, czym jest, ale już ma numer</dd><span class="mono muted">#1088821</span></div>
+    <div class="term"><dt>szara strefa</dt><dd>miejsce, z którego mogą zostać utracone zmiany, których nie ma</dd><span class="mono muted">#1054215</span></div>
+    <div class="term"><dt>tajemniczy przypadek</dt><dd>wniosek 00001/2023; nikt nie wie, co z nim było, ale ma własny bug</dd><span class="mono muted">#1117953</span></div>
+  </div>
+</section>
+
+<section class="view" id="v-gra" hidden>
+  <div class="section-head">
+    <h2>Dokończ tytuł</h2>
+    <p>Początek tytułu jest prawdziwy. Jedno z czterech zakończeń też. Dwanaście rund, bez limitu czasu, bez cofania.</p>
+  </div>
+  <div class="panel" id="game"></div>
+</section>
+
+<section class="view" id="v-quiz" hidden>
+  <div class="section-head">
+    <h2>Quiz: ile wiesz o twórczości</h2>
+    <p>Dwanaście pytań o liczby, daty i słowa z katalogu. Po każdej odpowiedzi jest wyjaśnienie.</p>
+  </div>
+  <div class="panel" id="quizBox"></div>
+</section>
+
+<section class="view" id="v-katalog" hidden>
+  <div class="section-head">
+    <h2>Katalog pełny</h2>
+    <p>Wszystkie 432 bugi, od najstarszego. Numer prowadzi do work itemu w Azure DevOps.</p>
+  </div>
+  <div class="tools">
+    <input type="search" id="q" placeholder="Szukaj w tytułach lub po numerze…" aria-label="Szukaj">
+    <select id="fEp" aria-label="Epoka"><option value="">wszystkie epoki</option><option value="1">I. Wczesny Komenda</option><option value="2">II. Okres absencyjny</option><option value="3">III. Okres rymowany</option></select>
+    <select id="fArea" aria-label="Obszar"><option value="">wszystkie obszary</option></select>
+    <label><input type="checkbox" id="fRym"> tylko rymowane</label>
+    <span class="count mono muted" id="count"></span>
+  </div>
+  <div class="table-wrap">
+    <table class="cat">
+      <thead><tr><th>#</th><th>Data</th><th>Obszar</th><th>Stan</th><th>Tytuł</th></tr></thead>
+      <tbody id="cat"></tbody>
+    </table>
+  </div>
+  <div class="more"><button class="btn ghost" id="moreBtn" type="button" hidden>Pokaż kolejne</button></div>
+</section>
+
+</main>
+
+<footer class="colophon">
+  <p>Źródło: Azure DevOps, organizacja unit4-global, projekt U4TETA. Zapytanie WIQL: <code>WorkItemType = 'Bug' AND CreatedBy CONTAINS 'Komenda'</code>, pobrane 29 października 2026. Stany: 359 Done, 57 Removed, 16 w toku. Obszary: Reports 274, Payroll 50, Civil contract 50, RCP 32, Framework 17, pozostałe 9. Podział na epoki i wybór tytułów są redakcyjne.</p>
+</footer>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
