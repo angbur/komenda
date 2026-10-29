@@ -15,6 +15,7 @@
     const v = VIEWS.includes(h) ? h : 'przeglad';
     VIEWS.forEach(id => { document.getElementById('v-' + id).hidden = id !== v; });
     document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + v));
+    document.getElementById('fab').hidden = v !== 'przeglad';
     window.scrollTo({ top: 0 });
   }
   window.addEventListener('hashchange', route);
