@@ -53,8 +53,31 @@
   [1, 2, 3].forEach(e => { document.getElementById('c' + e).textContent = DATA.filter(r => epochOf(r[1]) === e).length + ' bugów'; });
 
   document.querySelectorAll('ol.anth').forEach(ol => {
-    ol.innerHTML = ol.dataset.ids.split(',').map(id => byId.get(+id)).filter(Boolean).map(r =>
-      `<li><div class="t">${esc(r[4])}</div><div class="m">${link(r[0])}<span>${fmt(r[1])}</span><span>${esc(r[2])}</span></div></li>`).join('');
+    const rows = ol.dataset.ids.split(',').map(id => byId.get(+id)).filter(Boolean);
+    ol.innerHTML = rows.map((r, i) =>
+      `<li><span class="k" aria-hidden="true">${i + 1} / ${rows.length}</span><div class="t">${esc(r[4])}</div><div class="m">${link(r[0])}<span>${fmt(r[1])}</span><span>${esc(r[2])}</span></div></li>`).join('');
+    ol.setAttribute('tabindex', '0');
+    ol.setAttribute('aria-label', 'Tytuły epoki, przewijane w poziomie');
+    const nav = document.createElement('div');
+    nav.className = 'anth-nav';
+    nav.innerHTML = `<button type="button" class="anth-arrow" data-d="-1" aria-label="Poprzednie tytuły">←</button><span class="anth-bar"><i></i></span><span class="anth-count mono"></span><button type="button" class="anth-arrow" data-d="1" aria-label="Następne tytuły">→</button>`;
+    ol.after(nav);
+    const bar = nav.querySelector('.anth-bar i'), count = nav.querySelector('.anth-count'), [prev, next] = nav.querySelectorAll('.anth-arrow');
+    const step = () => { const li = ol.children[0], li2 = ol.children[1]; return li2 ? li2.offsetLeft - li.offsetLeft : ol.clientWidth; };
+    function update() {
+      const max = ol.scrollWidth - ol.clientWidth;
+      if (max <= 1) return;
+      const st = step(), first = Math.round(ol.scrollLeft / st), vis = Math.max(1, Math.floor((ol.clientWidth + 8) / st));
+      const last = Math.min(rows.length, ol.scrollLeft >= max - 2 ? rows.length : first + vis);
+      count.textContent = vis > 1 ? `${first + 1}–${last} z ${rows.length}` : `${first + 1} z ${rows.length}`;
+      bar.style.width = (Math.max(last / rows.length, ol.clientWidth / ol.scrollWidth) * 100) + '%';
+      prev.disabled = ol.scrollLeft <= 2; next.disabled = ol.scrollLeft >= max - 2;
+    }
+    nav.addEventListener('click', e => { const b = e.target.closest('.anth-arrow'); if (b) ol.scrollBy({ left: +b.dataset.d * step(), behavior: 'smooth' }); });
+    ol.addEventListener('scroll', () => requestAnimationFrame(update), { passive: true });
+    addEventListener('resize', update);
+    addEventListener('hashchange', () => setTimeout(update, 0));
+    update();
   });
 
   const POEM = [[1068793, 1068806, 1081932, 1081973], [1084359, 1106177, 1099088, 1116362], [1114589, 1114631, 1115758, 1133572], [1134057, 1140369, 1144000, 1154737]];
